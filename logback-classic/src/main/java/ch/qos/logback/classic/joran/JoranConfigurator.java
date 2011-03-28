@@ -65,7 +65,9 @@ public class JoranConfigurator extends JoranConfiguratorBase {
         new AppenderRefAction());
     rs.addRule(new Pattern("configuration/root/appender-ref"),
         new AppenderRefAction());
-    
+    rs.addRule(new Pattern("configuration/appender/appender-ref"),
+        new AppenderRefAction());
+
     // add if-then-else support
     rs.addRule(new Pattern("*/if"), new IfAction());
     rs.addRule(new Pattern("*/if/then"), new ThenAction());
