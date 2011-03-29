@@ -4,13 +4,14 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.read.ListAppender;
-import org.fest.assertions.Fail;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -239,6 +240,32 @@ public class RecordingAppenderTest {
 
     //then
     assertThat(logMsgs()).containsExactly("Test 1", "Test 2", "Test 3");
+  }
+
+  @Test
+  public void shouldDumpOnlyRecentLogsFromTriggeringThread() throws Exception {
+    //given
+    configureFrom("recording-defaults.xml");
+    final ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+    //when
+    log.debug("Test 1");
+    logFewStatementsInDifferentThreads(executorService, 100);
+    log.error("Test 3");
+
+    //then
+    assertThat(logMsgs()).containsExactly("Test 1", "Test 3");
+  }
+
+  private void logFewStatementsInDifferentThreads(ExecutorService executorService, final int count) throws InterruptedException {
+    for (int i = 0; i < count; ++i)
+      executorService.submit(new Runnable() {
+        public void run() {
+          log.info("Test 2");
+        }
+      });
+    executorService.shutdown();
+    executorService.awaitTermination(5, TimeUnit.SECONDS);
   }
 
   private void configureFrom(final String configFile) throws JoranException {
