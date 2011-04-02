@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration debug="true">
+
+  <appender name="MONGODB" class="ch.qos.logback.classic.db.mongo.MongoDBAppender">
+    <host>xyz.abc</host>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="MONGODB"/>
+  </root>
+
+</configuration>

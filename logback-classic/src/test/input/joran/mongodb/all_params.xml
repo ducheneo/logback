@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration debug="true">
+
+  <appender name="MONGODB" class="ch.qos.logback.classic.db.mongo.MongoDBAppender">
+    <host>localhost</host>
+    <port>27017</port>
+    <dbName>db</dbName>
+    <collectionName>loggingEvents</collectionName>
+    <username>admin</username>
+    <password>s3cr3t</password>
+    <connectionsPerHost>10</connectionsPerHost>
+    <threadsAllowedToBlockForConnectionMultiplier>5</threadsAllowedToBlockForConnectionMultiplier>
+    <maxWaitTime>120000</maxWaitTime>
+    <connectTimeout>0</connectTimeout>
+    <socketTimeout>0</socketTimeout>
+    <autoConnectRetry>false</autoConnectRetry>
+    <slaveOk>false</slaveOk>
+    <safe>false</safe>
+    <w>0</w>
+    <wtimeout>0</wtimeout>
+    <fsync>false</fsync>
+    <includeCallerData>false</includeCallerData>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="MONGODB"/>
+  </root>
+
+</configuration>
