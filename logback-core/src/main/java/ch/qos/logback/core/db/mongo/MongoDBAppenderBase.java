@@ -17,7 +17,7 @@ public abstract class MongoDBAppenderBase<E> extends UnsynchronizedAppenderBase<
   private String host = "localhost";
   private int port = 27017;
   private String dbName = "db";
-  private String collectionName = "loggingEvents";
+  private String collectionName;
   private String username;
   private String password;
 
@@ -32,6 +32,10 @@ public abstract class MongoDBAppenderBase<E> extends UnsynchronizedAppenderBase<
   private int w;
   private int wtimeout;
   private boolean fsync;
+
+  protected MongoDBAppenderBase(String collectionName) {
+    this.collectionName = collectionName;
+  }
 
   @Override
   public void start() {

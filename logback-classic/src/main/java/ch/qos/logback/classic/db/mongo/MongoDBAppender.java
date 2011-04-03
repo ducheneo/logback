@@ -17,6 +17,10 @@ public class MongoDBAppender extends MongoDBAppenderBase<LoggingEvent> {
 
   private boolean includeCallerData;
 
+  public MongoDBAppender() {
+    super("loggingEvents");
+  }
+
   @Override
   protected BasicDBObject toMongoDocument(LoggingEvent event) {
     final BasicDBObject doc = new BasicDBObject();
