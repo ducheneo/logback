@@ -3,6 +3,7 @@
 
   <appender name="MONGODB" class="ch.qos.logback.classic.db.mongo.MongoDBAppender">
     <includeCallerData>true</includeCallerData>
+    <w>1</w>
   </appender>
 
   <root level="DEBUG">

@@ -23,7 +23,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
@@ -109,7 +108,7 @@ public class MongoDBAppenderTest {
     log.info("Test: " + testName.getMethodName());
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "timeStamp", "level", "logger", "thread");
     assertThat(log.get("level")).isEqualTo("INFO");
@@ -128,7 +127,7 @@ public class MongoDBAppenderTest {
     log.info("Test: " + testName.getMethodName());
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "timeStamp", "callerData", "level", "logger", "thread");
     final List<Map<String, Object>> callerData = (List<Map<String, Object>>) log.get("callerData");
@@ -152,7 +151,7 @@ public class MongoDBAppenderTest {
 
     //then
     final Date after = new Date();
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "timeStamp", "level", "logger", "thread");
     assertThat(((Date) log.get("timeStamp")).getTime())
@@ -168,7 +167,7 @@ public class MongoDBAppenderTest {
     log.warn("Test: {}", testName.getMethodName());
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "arguments", "timeStamp", "level", "logger", "thread");
     assertThat(log.get("level")).isEqualTo("WARN");
@@ -185,7 +184,7 @@ public class MongoDBAppenderTest {
     log.error("Test: {}, {} and {}", new Object[]{42, "foo", date});
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.get("level")).isEqualTo("ERROR");
     assertThat((List<Object>) log.get("arguments")).containsExactly(42, "foo", date);
@@ -203,7 +202,7 @@ public class MongoDBAppenderTest {
     log.info("Test: " + testName.getMethodName());
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "mdc", "timeStamp", "level", "logger", "thread");
     assertThat((Map<String, Object>) log.get("mdc"))
@@ -227,7 +226,7 @@ public class MongoDBAppenderTest {
     }
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "timeStamp", "level", "logger", "thread", "throwable");
     assertThat(log.get("message")).isEqualTo(":-(");
@@ -259,7 +258,7 @@ public class MongoDBAppenderTest {
     }
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
     assertThat(log.keySet()).containsOnly("_id", "message", "timeStamp", "level", "logger", "thread", "throwable");
     final Map<String, Object> throwable = (Map<String, Object>) log.get("throwable");
@@ -287,7 +286,7 @@ public class MongoDBAppenderTest {
     }
 
     //then
-    final DBCursor cursor = waitUntilLogFound(1);
+    final DBCursor cursor = loadEventsFromMongo(1);
     final DBObject log = cursor.next();
 
     final Map<String, Object> throwable = (Map<String, Object>) log.get("throwable");
@@ -338,16 +337,10 @@ public class MongoDBAppenderTest {
   }
 
 
-  private DBCursor waitUntilLogFound(int count) throws InterruptedException {
-    for (int i = 0; i < 10; ++i) {
-      final DBCursor cursor = mongoEvents.find().sort(new BasicDBObject().append("message", 1));
-      assertThat(cursor.count()).isLessThanOrEqualTo(count);
-      if (cursor.count() == count)
-        return cursor;
-      else
-        TimeUnit.MILLISECONDS.sleep(100);
-    }
-    throw fail("Waiting too long for " + count + " logging events");
+  private DBCursor loadEventsFromMongo(int expectedCount) throws InterruptedException {
+    final DBCursor cursor = mongoEvents.find().sort(new BasicDBObject().append("message", 1));
+    assertThat(cursor.count()).isEqualTo(expectedCount);
+    return cursor;
   }
 
   @SuppressWarnings({"unchecked"})
@@ -363,7 +356,7 @@ public class MongoDBAppenderTest {
     log.error("D");
 
     //then
-    final DBCursor cursor = waitUntilLogFound(4);
+    final DBCursor cursor = loadEventsFromMongo(4);
     assertLog(cursor.next(), "A", "DEBUG");
     assertLog(cursor.next(), "B", "INFO");
     assertLog(cursor.next(), "C", "WARN");
