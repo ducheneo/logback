@@ -1,7 +1,7 @@
 package ch.qos.logback.classic.db.mongo;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.db.mongo.MongoDBAppenderBase;
 import com.mongodb.BasicDBList;
@@ -13,7 +13,7 @@ import java.util.Date;
  * @author Tomasz Nurkiewicz
  * @since 02.04.11, 15:01
  */
-public class MongoDBAppender extends MongoDBAppenderBase<LoggingEvent> {
+public class MongoDBAppender extends MongoDBAppenderBase<ILoggingEvent> {
 
   private boolean includeCallerData;
 
@@ -22,7 +22,7 @@ public class MongoDBAppender extends MongoDBAppenderBase<LoggingEvent> {
   }
 
   @Override
-  protected BasicDBObject toMongoDocument(LoggingEvent event) {
+  protected BasicDBObject toMongoDocument(ILoggingEvent event) {
     final BasicDBObject doc = new BasicDBObject();
     doc.append("timeStamp", new Date(event.getTimeStamp()));
     doc.append("level", event.getLevel().levelStr);
@@ -53,7 +53,7 @@ public class MongoDBAppender extends MongoDBAppenderBase<LoggingEvent> {
     return dbList;
   }
 
-  private void appendThrowableIfAvailable(BasicDBObject doc, LoggingEvent event) {
+  private void appendThrowableIfAvailable(BasicDBObject doc, ILoggingEvent event) {
     if (event.getThrowableProxy() != null) {
       final BasicDBObject val = toMongoDocument(event.getThrowableProxy());
       doc.append("throwable", val);
