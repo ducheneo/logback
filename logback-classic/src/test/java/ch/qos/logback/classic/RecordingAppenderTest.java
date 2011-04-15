@@ -272,13 +272,81 @@ public class RecordingAppenderTest {
     jc.doConfigure(ClassicTestConstants.JORAN_INPUT_PREFIX + configFile);
   }
 
+  private List<ILoggingEvent> logEvents() {
+    return ((ListAppender<ILoggingEvent>) lc.getLogger("LIST_LOG").getAppender("LIST")).list;
+  }
+
   private List<String> logMsgs() {
-    final List<ILoggingEvent> events = ((ListAppender<ILoggingEvent>) lc.getLogger("LIST_LOG").getAppender("LIST")).list;
+    final List<ILoggingEvent> events = logEvents();
     final ArrayList<String> msgs = new ArrayList<String>(events.size());
     for (ILoggingEvent event : events) {
       msgs.add(event.getMessage());
     }
     return msgs;
+  }
+
+  @Test
+  public void shouldDumpLogMessagesComingFromDifferentMethodsAndClasses() throws Exception {
+    //given
+    configureFrom("recording.xml");
+
+    //when
+    someMethod("Testing");
+    new RecordingAppenderHelper(log).otherMethod("Verifying");
+    log.error("Oh, no!");
+
+    //then
+    assertThat(logMsgs()).containsExactly("Testing", "Verifying", "Oh, no!");
+
+  }
+
+  @Test
+  public void shouldDumpCorrectCallerDataOfLogsComingFromDifferentMethodsAndClasses() throws Exception {
+    configureFrom("recording-callerdata.xml");
+
+    //when
+    someMethod("Testing");
+    new RecordingAppenderHelper(log).otherMethod("Verifying");
+    log.error("Oh, no!");
+
+    //then
+    final List<ILoggingEvent> events = logEvents();
+    assertThat(events).hasSize(3);
+    assertCallerData(events.get(0), "ch.qos.logback.classic.RecordingAppenderTest", "RecordingAppenderTest.java", "someMethod");
+    assertCallerData(events.get(1), "ch.qos.logback.classic.RecordingAppenderHelper", "RecordingAppenderHelper.java", "otherMethod");
+    assertCallerData(events.get(2), "ch.qos.logback.classic.RecordingAppenderTest", "RecordingAppenderTest.java", "shouldDumpCorrectCallerDataOfLogsComingFromDifferentMethodsAndClasses");
+  }
+
+  @Test
+  public void shouldDumpUnknownCallerDataWhenNotExplicitlyEnabled() throws Exception {
+    configureFrom("recording-no-callerdata.xml");
+
+    //when
+    someMethod("Testing");
+    new RecordingAppenderHelper(log).otherMethod("Verifying");
+    log.error("Oh, no!");
+
+    //then
+    final List<ILoggingEvent> events = logEvents();
+    assertThat(events).hasSize(3);
+    assertThat(events.get(0).getCallerData()).isNull();
+    assertThat(events.get(1).getCallerData()).isNull();
+    assertThat(events.get(2).getCallerData()).isNull();
+  }
+
+  private void assertCallerData(final ILoggingEvent event, final String expectedClassName, final String expectedFileName, final String expectedMethodName) {
+    final StackTraceElement[] callerData = event.getCallerData();
+    assertThat(callerData).isNotNull();
+    assertThat(callerData.length).isGreaterThan(0);
+
+    final StackTraceElement ste = callerData[0];
+    assertThat(ste.getClassName()).isEqualTo(expectedClassName);
+    assertThat(ste.getFileName()).isEqualTo(expectedFileName);
+    assertThat(ste.getMethodName()).isEqualTo(expectedMethodName);
+  }
+
+  private void someMethod(String msg) {
+    log.debug(msg);
   }
 
 }

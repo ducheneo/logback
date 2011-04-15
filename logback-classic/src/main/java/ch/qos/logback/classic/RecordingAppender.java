@@ -1,13 +1,13 @@
 package ch.qos.logback.classic;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggingEventVO;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ch.qos.logback.core.helpers.CyclicBuffer;
 import ch.qos.logback.core.spi.AppenderAttachable;
 import ch.qos.logback.core.spi.AppenderAttachableImpl;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -20,6 +20,7 @@ public class RecordingAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
   private int maxEvents = 100;
   private Level dumpThreshold = Level.ERROR;
   private long expiryTimeMs = 30000;
+  private boolean callerData;
 
   private ThreadLocal<CyclicBuffer<ILoggingEvent>> recordedEvents = new ThreadLocal<CyclicBuffer<ILoggingEvent>>() {
     @Override
@@ -30,6 +31,10 @@ public class RecordingAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
 
   @Override
   protected void append(ILoggingEvent eventObject) {
+    if(callerData)
+      eventObject.getCallerData();
+    else
+      eventObject = LoggingEventVO.build(eventObject);
     if (triggersDump(eventObject)) {
       dumpRecordedEvents();
       dump(eventObject);
@@ -73,6 +78,10 @@ public class RecordingAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
 
   public void setExpiryTimeMs(long expiryTimeMs) {
     this.expiryTimeMs = expiryTimeMs;
+  }
+
+  public void setCallerData(boolean callerData) {
+    this.callerData = callerData;
   }
 
   private transient AppenderAttachableImpl<ILoggingEvent> aai = new AppenderAttachableImpl<ILoggingEvent>();
