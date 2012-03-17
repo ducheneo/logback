@@ -36,6 +36,7 @@ public class ThrowableProxyConverter extends ThrowableHandlingConverter {
 
   int lengthOption;
   List<EventEvaluator<ILoggingEvent>> evaluatorList = null;
+  List<String> ignoredStackTraceLines = null;
 
   int errorCount = 0;
 
@@ -68,12 +69,16 @@ public class ThrowableProxyConverter extends ThrowableHandlingConverter {
     if (optionList != null && optionList.size() > 1) {
       final int optionListSize = optionList.size();
       for (int i = 1; i < optionListSize; i++) {
-        String evaluatorStr = (String) optionList.get(i);
+        String evaluatorOrIgnoredStackTraceLine = (String) optionList.get(i);
         Context context = getContext();
         Map evaluatorMap = (Map) context.getObject(CoreConstants.EVALUATOR_MAP);
         EventEvaluator<ILoggingEvent> ee = (EventEvaluator<ILoggingEvent>) evaluatorMap
-                .get(evaluatorStr);
-        addEvaluator(ee);
+                .get(evaluatorOrIgnoredStackTraceLine);
+        if (ee != null) {
+          addEvaluator(ee);
+        } else {
+          addIgnoreStackTraceLine(evaluatorOrIgnoredStackTraceLine);
+        }
       }
     }
     super.start();
@@ -84,6 +89,13 @@ public class ThrowableProxyConverter extends ThrowableHandlingConverter {
       evaluatorList = new ArrayList<EventEvaluator<ILoggingEvent>>();
     }
     evaluatorList.add(ee);
+  }
+
+  private void addIgnoreStackTraceLine(String ignoredStackTraceLine) {
+    if (ignoredStackTraceLines == null) {
+      ignoredStackTraceLines = new ArrayList<String>();
+    }
+    ignoredStackTraceLines.add(ignoredStackTraceLine);
   }
 
   public void stop() {
@@ -174,4 +186,16 @@ public class ThrowableProxyConverter extends ThrowableHandlingConverter {
               " common frames omitted").append(CoreConstants.LINE_SEPARATOR);
     }
   }
+
+  boolean isIgnoredStackTraceLine(String line) {
+    if(ignoredStackTraceLines != null) {
+      for (String ignoredStackTraceLine : ignoredStackTraceLines) {
+        if(line.contains(ignoredStackTraceLine)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
 }

@@ -51,12 +51,21 @@ public class RootCauseFirstThrowableProxyConverter extends ExtendedThrowableProx
       maxIndex -= commonFrames;
     }
 
+    int ignoredCount = 0;
     for (int i = 0; i < maxIndex; i++) {
       String string = stepArray[i].toString();
-      buf.append(CoreConstants.TAB);
-      buf.append(string);
-      extraData(buf, stepArray[i]); // allow other data to be added
-      buf.append(CoreConstants.LINE_SEPARATOR);
+      if (!isIgnoredStackTraceLine(string)) {
+        buf.append(CoreConstants.TAB);
+        buf.append(string);
+        extraData(buf, stepArray[i]); // allow other data to be added
+        if (ignoredCount > 0) {
+          buf.append(" [" + ignoredCount + " skipped]");
+          ignoredCount = 0;
+        }
+        buf.append(CoreConstants.LINE_SEPARATOR);
+      } else {
+        ++ignoredCount;
+      }
     }
 
   }
